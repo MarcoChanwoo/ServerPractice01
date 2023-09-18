@@ -1,108 +1,51 @@
-let postId = 1; // id의 초기값 설정
+import Post from '../../models/post';
 
-// posts 배열 초기 데이터
-const posts = [
-    {
-        id: 1,
-        title: '제목',
-        body: '내용',
-    },
-];
-
-/** 포스트 작성
- *  POST /api/posts
- * {title, body}
- */
-export const write = (ctx) => {
-    const { title, body } = ctx.request.body;
-    postId += 1;
-    const post = { id: postId, title, body };
-    posts.push(post);
-    ctx.body = post;
-};
-
-/** 포스트 목록 조회
- * GET /api/posts
- */
-export const list = (ctx) => {
-    ctx.body = posts;
-};
-
-/** 특정 포스트 조회
- * GET /api/posts/:id
- */
-export const read = (ctx) => {
-    const { id } = ctx.params;
-    const post = posts.find((p) => p.id.toString() === id);
-    if (!post) {
-        ctx.status = 404;
-        ctx.body = {
-            message: '포스트가 존재하지 않습니다.',
-        };
-        return;
+export const write = async (ctx) => {
+    const { title, body, tags } = ctx.request.body;
+    const post = new Post({
+        title,
+        body,
+        tags,
+    });
+    try {
+        await post.save();
+        ctx.body = post;
+    } catch (e) {
+        ctx.throw(500, e);
     }
-    ctx.body = post;
 };
 
-/** 특정 포스트 제거
- * DELETE /api/posts/:id
- */
-export const remove = (ctx) => {
-    const { id } = ctx.params;
-    const index = posts.findIndex((p) => p.id.toString() === id);
-    if (index === -1) {
-        ctx.status = 404;
-        ctx.body = {
-            message: '포스트가 존재하지 않습니다.',
-        };
-        return;
+export const list = async (ctx) => {
+    try {
+        const posts = await Post.find().exec();
+        ctx.body = posts;
+    } catch (e) {
+        ctx.throw(500, e);
     }
-    // index번째 아이템을 제거함
-    posts.splice(index, 1);
-    ctx.status = 204; // No Content
 };
 
-/** 포스트 수정
- * PUT /api/posts/:id
- * {title, body}
- */
-export const replace = (ctx) => {
+export const read = async (ctx) => {
     const { id } = ctx.params;
-    const index = posts.findIndex((p) => p.id.toString() === id);
-    if (index === -1) {
-        ctx.status = 404;
-        ctx.body = {
-            message: '포스트가 존재하지 않습니다',
-        };
-        return;
+    try {
+        const post = await Post.findById(id).exec();
+        if (!post) {
+            ctx.status = 404; //Not Found
+            return;
+        }
+        ctx.body = post;
+    } catch (e) {
+        ctx.throw(500, e);
     }
-    // 전체 객체를 덮어씀
-    // id를 제외한 기본 정보를 없애고 객체를 새로 생성
-    posts[index] = {
-        id,
-        ...ctx.request.body,
-    };
-    ctx.body = posts[index];
 };
 
-/** 포스트 수정(특정 필드 변경)
- * PATCH /api/posts/:id
- * {title, body}
- */
-export const update = (ctx) => {
+export const remove = async (ctx) => {
     const { id } = ctx.params;
-    const index = posts.findIndex((p) => p.id.toString() === id);
-    if (index === -1) {
-        ctx.status = 404;
-        ctx.body = {
-            message: ' 포스트가 존재하지 않습니다.',
-        };
-        return;
+    try {
+        await Post.findByIdAndRemove(id).exec();
+        ctx.status = 204; // No Content(성공했으나 응답할 데이터가 없음)
+    } catch (e) {
+        ctx.throw(500, e);
     }
-    // 기존 값에 정보를 덮어씀
-    posts[index] = {
-        ...posts[index],
-        ...ctx.request.body,
-    };
-    ctx.body = posts[index];
 };
+
+export const update = (ctx) => {};
