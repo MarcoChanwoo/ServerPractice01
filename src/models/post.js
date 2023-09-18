@@ -1,6 +1,4 @@
-import mongoose from 'mongoose';
-
-const { Schema } = mongoose;
+import mongoose, { Schema } from 'mongoose';
 
 // 모델 인스턴스 생성
 const PostSchema = new Schema({
@@ -10,6 +8,10 @@ const PostSchema = new Schema({
     publishedDate: {
         type: Date,
         default: Date.now,
+    },
+    user: {
+        _id: mongoose.Types.ObjectId,
+        username: String,
     },
 });
 
