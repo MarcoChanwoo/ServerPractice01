@@ -54,13 +54,51 @@ export const write = async (ctx) => {
     }
 };
 
+/**
+ * GET /api/posts?username=&tag=&page=
+ */
 export const list = async (ctx) => {
+    // query는 문자열이므로 숫자로 변환해야 함
+    // 값이 주어지지 않았다면 1을 기본으로 사용함
+    const page = parseInt(ctx.query.page || '1', 10);
+
+    if (page < 1) {
+        ctx.status = 400;
+        return;
+    }
+    const { tag, username } = ctx.query;
+    // tag, username값이 유효하다면 객체안에 삽입, 아니면 삽입 안함
+    const query = {
+        ...Joi(username ? { 'user.username': username } : {}),
+        ...Joi(tag ? { tags: tag } : {}),
+    };
+
     try {
-        const posts = await Post.find().exec();
-        ctx.body = posts;
+        const posts = await Post.find(query)
+            .sort({ _id: -1 })
+            .limit(10)
+            .skip((page - 1) * 10)
+            .lean()
+            .exec();
+        const postCount = await Post.countDocuments(query).exec();
+        ctx.set('Last-Page', Math.ceil(postCount / 10));
+        ctx.body = posts.map((post) => ({
+            ...post,
+            body:
+                post.body.length < 200
+                    ? post.body
+                    : `${post.body.slice(0, 200)}...`,
+        }));
     } catch (e) {
         ctx.throw(500, e);
     }
+
+    // try {
+    //     const posts = await Post.find().exec();
+    //     ctx.body = posts;
+    // } catch (e) {
+    //     ctx.throw(500, e);
+    // }
 };
 
 export const read = (ctx) => {
