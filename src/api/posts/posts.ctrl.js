@@ -48,4 +48,20 @@ export const remove = async (ctx) => {
     }
 };
 
-export const update = (ctx) => {};
+export const update = async (ctx) => {
+    const { id } = ctx.params;
+    try {
+        const post = await Post.findByIdAndUpdate(id, ctx.request.body, {
+            new: true,
+            // true: 업데이트된 데이터를 반환함
+            // false: 업데이트되기 전의 데이터를 반환함
+        }).exec();
+        if (!post) {
+            ctx.status = 404;
+            return;
+        }
+        ctx.body = post;
+    } catch (e) {
+        ctx.throw(500, e);
+    }
+};
