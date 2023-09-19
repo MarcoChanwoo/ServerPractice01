@@ -51,6 +51,13 @@ export const register = async (ctx) => {
     }
 };
 
+/*
+    POST /api/auth/login
+    {
+        "username": 'marco',
+        "password": 'my123'
+    }
+*/
 export const login = async (ctx) => {
     const { username, password } = ctx.request.body;
 
